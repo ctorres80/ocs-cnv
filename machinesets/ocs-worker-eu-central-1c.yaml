@@ -1,0 +1,85 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  creationTimestamp: "2020-05-28T19:16:33Z"
+  generation: 1
+  labels:
+    machine.openshift.io/cluster-api-cluster: cluster-demo-dbf4-6crrv
+  name: ocs-worker-eu-central-1c
+  namespace: openshift-machine-api
+  resourceVersion: "5661"
+  selfLink: /apis/machine.openshift.io/v1beta1/namespaces/openshift-machine-api/machinesets/ocs-worker-eu-central-1c
+  uid: e4080d1f-2255-4323-b681-dca91985280d
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: cluster-demo-dbf4-6crrv
+      machine.openshift.io/cluster-api-machineset: ocs-worker-eu-central-1c
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        machine.openshift.io/cluster-api-cluster: cluster-demo-dbf4-6crrv
+        machine.openshift.io/cluster-api-machine-role: worker
+        machine.openshift.io/cluster-api-machine-type: worker
+        machine.openshift.io/cluster-api-machineset: ocs-worker-eu-central-1c
+    spec:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster.ocs.openshift.io/openshift-storage: ""
+      providerSpec:
+        value:
+          ami:
+            id: ami-0a8b58b4be8846e83
+          apiVersion: awsproviderconfig.openshift.io/v1beta1
+          blockDevices:
+          - ebs:
+              iops: 0
+              volumeSize: 120
+              volumeType: gp2
+          credentialsSecret:
+            name: aws-cloud-credentials
+          deviceIndex: 0
+          iamInstanceProfile:
+            id: cluster-demo-dbf4-6crrv-worker-profile
+          instanceType: m5.metal
+          kind: AWSMachineProviderConfig
+          metadata:
+            creationTimestamp: null
+          placement:
+            availabilityZone: eu-central-1c
+            region: eu-central-1
+          publicIp: null
+          securityGroups:
+          - filters:
+            - name: tag:Name
+              values:
+              - cluster-demo-dbf4-6crrv-worker-sg
+          subnet:
+            filters:
+            - name: tag:Name
+              values:
+              - cluster-demo-dbf4-6crrv-private-eu-central-1c
+          tags:
+          - name: kubernetes.io/cluster/cluster-demo-dbf4-6crrv
+            value: owned
+          - name: env_type
+            value: ocp4-workshop
+          - name: guid
+            value: demo-dbf4
+          - name: owner
+            value: ctorres@redhat.com
+          - name: platform
+            value: RHPDS
+          - name: uuid
+            value: f29e1263-8b13-4183-846c-c36d050a746b
+          - name: Stack
+            value: project ocp4-workshop-demo-dbf4
+          - name: catalog_item
+            value: OpenShift_4.4_Workshop
+          - name: email
+            value: ctorres@redhat.com
+          userDataSecret:
+            name: worker-user-data
