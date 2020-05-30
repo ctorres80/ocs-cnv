@@ -6,6 +6,6 @@
     kubevirt_cdi_upload:
       pvc_namespace: openshift-cnv
       pvc_name: win2012-iso-cephfs-vol1
-      upload_host: https://cdi-uploadproxy-openshift-cnv.apps.cluster-dubai-42bb.dubai-42bb.example.opentlc.com
+      upload_host: https://cdi-uploadproxy-openshift-cnv.apps.cluster-demo-dbf4.demo-dbf4.example.opentlc.com
       upload_host_validate_certs: false
-      path: ./isos/es_wiDws_server_2012_r2_x64_dvd_2708013.iso
+      path: ./isos/win2012.iso

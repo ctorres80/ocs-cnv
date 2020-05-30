@@ -1,0 +1,11 @@
+---
+- name: Upload cdi
+  hosts: localhost
+  tasks:
+  - name: Upload local image to fc32-iso-cephfs-vol1
+    kubevirt_cdi_upload:
+      pvc_namespace: openshift-cnv
+      pvc_name: fc32-iso-cephfs-vol1
+      upload_host: https://cdi-uploadproxy-openshift-cnv.apps.cluster-demo-dbf4.demo-dbf4.example.opentlc.com
+      upload_host_validate_certs: false
+      path: ./isos/Fedora-Workstation-Live-x86_64-32-1.6.iso
