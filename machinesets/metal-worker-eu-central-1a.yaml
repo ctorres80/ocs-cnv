@@ -1,17 +1,17 @@
 apiVersion: machine.openshift.io/v1beta1
 kind: MachineSet
 metadata:
-  creationTimestamp: "2020-05-28T19:16:33Z"
-  generation: 4
+  creationTimestamp: "2020-05-28T20:35:22Z"
+  generation: 8
   labels:
     machine.openshift.io/cluster-api-cluster: cluster-demo-dbf4-6crrv
   name: metal-worker-eu-central-1a
   namespace: openshift-machine-api
-  resourceVersion: "26759"
+  resourceVersion: "220952"
   selfLink: /apis/machine.openshift.io/v1beta1/namespaces/openshift-machine-api/machinesets/metal-worker-eu-central-1a
-  uid: 45f9a652-5630-4b9f-b337-05e83c153bdf
+  uid: 042ef4c8-c9d2-421c-8239-ce60b843025b
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       machine.openshift.io/cluster-api-cluster: cluster-demo-dbf4-6crrv
@@ -27,6 +27,8 @@ spec:
     spec:
       metadata:
         creationTimestamp: null
+        labels:
+          cluster.ocs.openshift.io/openshift-storage: ""
       providerSpec:
         value:
           ami:
@@ -42,7 +44,7 @@ spec:
           deviceIndex: 0
           iamInstanceProfile:
             id: cluster-demo-dbf4-6crrv-worker-profile
-          instanceType: m5.metal
+          instanceType: c5d.metal
           kind: AWSMachineProviderConfig
           metadata:
             creationTimestamp: null
