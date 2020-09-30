@@ -29,7 +29,7 @@ spec:
             nodeSelectorTerms:
             - matchExpressions:
               - key: cluster.ocs.openshift.io/openshift-storage
-                operator: NotIn
+                operator: In
                 values:
                 - ""
       containers:
@@ -52,5 +52,5 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 100Gi
+          storage: 50Gi
       storageClassName: ocs-storagecluster-ceph-rbd

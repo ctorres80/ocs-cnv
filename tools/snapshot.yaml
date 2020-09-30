@@ -1,0 +1,9 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshot
+metadata:
+  name: test-ocs-pvc-fio-blockceph-tools-0-snapshot
+spec:
+  volumeSnapshotClassName: ocs-storagecluster-rbdplugin-snapclass
+  source:
+    persistentVolumeClaimName: test-ocs-pvc-fio-block-ceph-tools-0
