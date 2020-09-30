@@ -1,0 +1,293 @@
+kind: Template
+apiVersion: "v1"
+metadata:
+  name: "phpmyadmin-mysql-persistent"
+  annotations:
+    openshift.io/display-name: "phpMyAdmin MySQL"
+    openshift.io/long-description: "This template provides a standalone MySQL server with phpMyAdmin created. The database is stored on persistent storage.  The database name, username, and password are chosen via parameters when provisioning this service."
+    openshift.io/provider-display-name: "Wen Hao."
+    openshift.io/documentation-url: "https://docs.openshift.org/latest/using_images/db_images/mysql.html"
+    openshift.io/support-url: "https://wenhao.github.io"
+    description: "MySQL database service, with persistent storage and phpMyAdmin."
+    tags: "mysql,phpmyadmin,database"
+    iconClass: "icon-mysql-database"
+message: "The following service(s) have been created in your project: \n\n    phpMyAdmin: ${PHPMYADMIN_SERVICE_NAME}\n\n    MySQL: ${MYSQL_SERVICE_NAME}\n    Username: ${MYSQL_USER}\n    Password: ${MYSQL_PASSWORD}\n    Database Name: ${MYSQL_DATABASE}\n    Connection URL: mysql://${MYSQL_SERVICE_NAME}:3306/\n\nFor more information about using this template, see https://github.com/wenhao/openshift-phpmyadmin-mysql/blob/master/README.md."
+labels:
+  template: "phpmyadmin-mysql-persistent"
+objects:
+  - kind: DeploymentConfig
+    apiVersion: "v1"
+    metadata:
+      name: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      labels:
+        app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+    spec:
+      replicas: 1
+      selector:
+        app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      strategy:
+        type: "Recreate"
+      triggers:
+        - type: "ImageChange"
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - phpmyadmin
+            from:
+              kind: "ImageStreamTag"
+              name: "phpmyadmin:${PHPMYADMIN_VERSION}"
+              namespace: "${NAMESPACE}"
+        - type: "ConfigChange"
+      template:
+        metadata:
+          labels:
+            app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+        spec:
+          containers:
+            - name: "phpmyadmin"
+              image: " "
+              imagePullPolicy: "IfNotPresent"
+              readinessProbe:
+                timeoutSeconds: 3
+                initialDelaySeconds: 3
+                httpGet:
+                  path: "/index.php"
+                  port: 80
+              livenessProbe:
+                timeoutSeconds: 3
+                initialDelaySeconds: 20
+                failureThreshold: 30
+                httpGet:
+                  path: "/index.php"
+                  port: 80
+              env:
+                - name: PMA_HOST
+                  value: "${MYSQL_SERVICE_NAME}-mysql.${NAMESPACE}.svc"
+              resources:
+                requests:
+                  cpu: 1
+                  memory: "512Mi"
+                limits:
+                  cpu: 4
+                  memory: "${PHPMYADMIN_MEMORY_LIMIT}"
+              terminationMessagePath: "/dev/termination-log"
+              securityContext:
+                privileged: false
+          restartPolicy: "Always"
+          dnsPolicy: "ClusterFirst"
+  - kind: Service
+    apiVersion: "v1"
+    metadata:
+      name: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      labels:
+        app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      annotations:
+        service.openshift.io/infrastructure: "true"
+    spec:
+      ports:
+        - name: "phpmyadmin"
+          protocol: "TCP"
+          port: 80
+          targetPort: 80
+      selector:
+        app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      type: "ClusterIP"
+    sessionAffinity: "None"
+  - kind: Route
+    apiVersion: "v1"
+    metadata:
+      name: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      labels:
+        app: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+      annotations:
+        template.openshift.io/expose-uri: "http://{.spec.host}{.spec.path}"
+    spec:
+      to:
+        kind: Service
+        name: "${PHPMYADMIN_SERVICE_NAME}-phpmyadmin"
+  - kind: DeploymentConfig
+    apiVersion: "v1"
+    metadata:
+      name: "${MYSQL_SERVICE_NAME}-mysql"
+      labels:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+      annotations:
+        template.alpha.openshift.io/wait-for-ready: "true"
+    spec:
+      strategy:
+        type: "Recreate"
+      triggers:
+        - type: "ImageChange"
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - mysql
+            from:
+              kind: "ImageStreamTag"
+              name: "mysql:${MYSQL_VERSION}"
+              namespace: "${NAMESPACE}"
+        - type: "ConfigChange"
+      replicas: 1
+      selector:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+      template:
+        metadata:
+          labels:
+            app: "${MYSQL_SERVICE_NAME}-mysql"
+        spec:
+          containers:
+            - name: "mysql"
+              image: " "
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - containerPort: 3306
+              readinessProbe:
+                timeoutSeconds: 1
+                initialDelaySeconds: 5
+                exec:
+                  command:
+                    - "/bin/sh"
+                    - "-i"
+                    - "-c"
+                    - "MYSQL_PWD=\"$MYSQL_PASSWORD\" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE -e 'SELECT 1'"
+              livenessProbe:
+                timeoutSeconds: 1
+                initialDelaySeconds: 30
+                tcpSocket:
+                  port: 3306
+              env:
+                - name: MYSQL_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: "${MYSQL_SERVICE_NAME}-mysql"
+                      key: "database-user"
+                - name: MYSQL_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: "${MYSQL_SERVICE_NAME}-mysql"
+                      key: "database-password"
+                - name: MYSQL_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: "${MYSQL_SERVICE_NAME}-mysql"
+                      key: "database-root-password"
+                - name: MYSQL_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: "${MYSQL_SERVICE_NAME}-mysql"
+                      key: "database-name"
+              resources:
+                limits:
+                  cpu: 4
+                  memory: "${MYSQL_MEMORY_LIMIT}"
+              volumeMounts:
+                - name: "${MYSQL_SERVICE_NAME}-mysql-data"
+                  mountPath: "/var/lib/mysql/data"
+              terminationMessagePath: "/dev/termination-log"
+          volumes:
+            - name: "${MYSQL_SERVICE_NAME}-mysql-data"
+              persistentVolumeClaim:
+                claimName: "${MYSQL_SERVICE_NAME}-mysql"
+  - kind: Secret
+    apiVersion: "v1"
+    metadata:
+      name: "${MYSQL_SERVICE_NAME}-mysql"
+      labels:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+      annotations:
+        template.openshift.io/expose-username: "{.data['database-user']}"
+        template.openshift.io/expose-password: "{.data['database-password']}"
+        template.openshift.io/expose-root_password: "{.data['database-root-password']}"
+        template.openshift.io/expose-database_name: "{.data['database-name']}"
+    stringData:
+      database-user: "${MYSQL_USER}"
+      database-password: "${MYSQL_PASSWORD}"
+      database-root-password: "${MYSQL_ROOT_PASSWORD}"
+      database-name: "${MYSQL_DATABASE}"
+  - kind: Service
+    apiVersion: "v1"
+    metadata:
+      name: "${MYSQL_SERVICE_NAME}-mysql"
+      labels:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+      annotations:
+        template.openshift.io/expose-uri: "mysql://{.spec.clusterIP}:{.spec.ports[?(.name==\"mysql\")].port}"
+    spec:
+      ports:
+        - name: mysql
+          port: 3306
+      selector:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+  - kind: PersistentVolumeClaim
+    apiVersion: "v1"
+    metadata:
+      name: "${MYSQL_SERVICE_NAME}-mysql"
+      labels:
+        app: "${MYSQL_SERVICE_NAME}-mysql"
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "${VOLUME_CAPACITY}"
+      storageClassName: slow
+parameters:
+  - name: NAMESPACE
+    displayName: Namespace
+    description: "The OpenShift Namespace where the ImageStream resides."
+    value: mysql-phpmyadmin
+  - name: PHPMYADMIN_SERVICE_NAME
+    displayName: "phpMyAdmin Service Name"
+    description: "The name of the OpenShift Service exposed for the phpMyAdmin, pre-set a suffix '-phpmyadmin'."
+    value: phpmyadmin
+    required: true
+  - name: PHPMYADMIN_VERSION
+    displayName: "Version of phpMyAdmin Image"
+    description: "Version of phpMyAdmin image to be used (4.7.7, or latest)."
+    value: "4.7.7"
+    required: true
+  - name: PHPMYADMIN_MEMORY_LIMIT
+    displayName: "phpMyAdmin Memory Limit"
+    description: "Maximum amount of memory the container can use."
+    value: 512Mi
+    required: true
+  - name: MYSQL_SERVICE_NAME
+    displayName: "MySQL Service Name"
+    description: "The name of the OpenShift Service exposed for the database, pre-set a suffix '-mysql'."
+    value: mysql
+    required: true
+  - name: MYSQL_USER
+    displayName: "MySQL Connection Username"
+    description: "Username for MySQL user that will be used for accessing the database."
+    value: redhat
+    required: true
+  - name: MYSQL_PASSWORD
+    displayName: "MySQL Connection Password"
+    description: "Password for the MySQL connection user."
+    value: redhat
+    required: true
+  - name: MYSQL_ROOT_PASSWORD
+    displayName: "MySQL root user Password"
+    description: "Password for the MySQL root user."
+    value: redhat
+    required: true
+  - name: MYSQL_DATABASE
+    displayName: "MySQL Database Name"
+    description: "Name of the MySQL database accessed."
+    value: redhat
+    required: true
+  - name: MYSQL_MEMORY_LIMIT
+    displayName: "Memory Limit"
+    description: "Maximum amount of memory the container can use."
+    value: 5Gi
+    required: true
+  - name: VOLUME_CAPACITY
+    displayName: "Volume Capacity"
+    description: "Volume space available for data, e.g. 512Mi, 2Gi."
+    value: 100Gi
+    required: true
+  - name: MYSQL_VERSION
+    displayName: "Version of MySQL Image"
+    description: "Version of MySQL image to be used (5.5, 5.6, 5.7, or latest)."
+    value: "5.6"
+    required: true
