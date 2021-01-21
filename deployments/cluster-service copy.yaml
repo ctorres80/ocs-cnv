@@ -1,0 +1,82 @@
+---
+apiVersion: ocs.openshift.io/v1
+kind: StorageCluster
+metadata:
+  name: ocs-storagecluster
+  namespace: openshift-storage
+spec:
+  manageNodes: false
+  monDataDirHostPath: /var/lib/rook
+  storageDeviceSets:
+  - count: 4
+    dataPVCTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1
+        storageClassName: localblock
+        volumeMode: Block
+    name: ocs-deviceset
+    placement: {}
+    portable: false
+    replica: 3
+    resources:
+      limits:
+        cpu: 6
+        memory: 8Gi
+      requests:
+        cpu: 2
+        memory: 5Gi
+spec:
+  encryption: {}
+  externalStorage: {}
+  managedResources:
+    cephBlockPools: {}
+    cephFilesystems: {}
+    cephObjectStoreUsers: {}
+    cephObjectStores: {}
+  monDataDirHostPath: /var/lib/rook
+  storageDeviceSets:
+    - config: {}
+      count: 4
+      dataPVCTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: '1'
+          storageClassName: localblock
+          volumeMode: Block
+        status: {}
+      name: ocs-deviceset
+      placement: {}
+      replica: 3
+      resources:
+        limits:
+          cpu: '6'
+          memory: 8Gi
+        requests:
+          cpu: '2'
+          memory: 5Gi
+    - count: 1
+      dataPVCTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: '1'
+          storageClassName: gp2
+          volumeMode: Block
+      name: ocs-deviceset-gp2
+      placement: {}
+      portable: true
+      replica: 3
+      resources: {}
+
+      [ctorres-redhat.com@bastion ~]$ oc -n openshift-storage patch StorageCluster ocs-storagecluster --type=json -p '[{"op": "replace", "path": "/spec/storageDeviceSets/1/dataPVCTemplate/spec/resources/requests/storage", "value":4Ti}]'

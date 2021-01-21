@@ -14,3 +14,4 @@ oc get nodes -l cluster.ocs.openshift.io/openshift-storage= -o jsonpath='{range 
 oc label namespace openshift-storage "openshift.io/cluster-monitoring=true"
 # enable ceph-tool in ocs
 oc patch OCSInitialization ocsinit -n openshift-storage --type json --patch  '[{ "op": "replace", "path": "/spec/enableCephTools", "value": true }]'
+[ctorres-redhat.com@bastion ~]$ oc -n openshift-storage patch StorageCluster ocs-storagecluster --type=json -p '[{"op": "replace", "path": "/spec/storageDeviceSets/1/dataPVCTemplate/spec/resources/requests/storage", "value":4Ti}]'
